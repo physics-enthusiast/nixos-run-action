@@ -149,7 +149,7 @@ runs:
             pass
         cmd = f'''qemu-system-x86_64 -nographic -m 4096 -chardev socket,id=qga0,host=localhost,port=9876,server=on -device virtio-serial -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 -fsdev local,security_model=mapped,id=fsdev0,path="{os.environ['NIXOS_RUN_CMDDIR']}" -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=cmd -fsdev local,security_model=mapped,id=fsdev1,path="{os.environ['NIXOS_RUN_MNTDIR']}" -device virtio-9p-pci,id=fs1,fsdev=fsdev1,mount_tag=mnt -smp {os.cpu_count()} -nic user -hda "{os.environ['NIXOS_RUN_TMPDIR']}/nixos.qcow2" -accel "whpx" -accel "kvm" -accel "hvf" -accel "tcg"'''
         async def main():
-            proc = await asyncio.create_subprocess_shell(cmd${{ inputs.debug != true && ', stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL' }})
+            proc = await asyncio.create_subprocess_shell(cmd${{ inputs.debug != 'true' && ', stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL' }})
             qmp = QMPClient()
             qmp.await_greeting = False
             qmp.negotiate = False
