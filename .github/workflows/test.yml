@@ -1,0 +1,10 @@
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: physics-enthusiast/nixos-run-action@main
+        with:
+          cmd: |
+            uname
