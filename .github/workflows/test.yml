@@ -4,7 +4,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: physics-enthusiast/nixos-run-action@${{ github.action_ref }}
+      - uses: actions/checkout@v4
+      - uses: ./action.yml
         with:
           cmd: |
             uname
