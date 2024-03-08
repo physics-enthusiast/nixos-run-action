@@ -12,7 +12,8 @@ jobs:
             os: ubuntu-latest
           - name: Darwin
             os: macos-latest
-    runs-on: ${{ matrix.os }} 
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }} 
     steps:
       - uses: actions/checkout@v4
       - uses: ./
