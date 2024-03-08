@@ -15,7 +15,9 @@ jobs:
     runs-on: ${{ matrix.os }} 
     name: ${{ matrix.name }} 
     steps:
-      - uses: physics-enthusiast/nixos-run-action@main
+      - uses: actions/checkout@v4
+      - uses: ./
         with:
           cmd: |
             uname
+          debug: true
