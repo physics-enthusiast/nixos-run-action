@@ -50,7 +50,7 @@ runs:
       shell: python
     - name: Prepare common shell (Windows)
       if: runner.os == 'Windows'
-      uses: Vampire/setup-wsl@v2
+      uses: Vampire/setup-wsl@v3
       with:
         additional-packages: ca-certificates
           openssl
