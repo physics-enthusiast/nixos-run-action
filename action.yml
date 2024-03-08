@@ -60,6 +60,7 @@ runs:
         mkdir bash-redirect
         ln -s $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
+      shell: bash
     - name: Prepare common shell (Darwin)
       if: runner.os == 'macOS'
       run: |
@@ -67,21 +68,25 @@ runs:
         mkdir bash-redirect
         ln -s $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
+      shell: bash
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
       run: |
         aria2c --dir="${{ env.NIXOS_RUN_TMPDIR }}" https://github.com/physics-enthusiast/qemu-patched-compile/releases/download/qemu-test/qemu-setup.exe
         Start-Process -FilePath '${{ env.NIXOS_RUN_TMPDIR }}/qemu-setup.exe' -ArgumentList '/S /D=C:\Program Files\qemu' -NoNewWindow -Wait -PassThru -RedirectStandardOutput output.txt -RedirectStandardError error.txt
         Add-Content $env:GITHUB_PATH "C:\Program Files\qemu"
+      shell: powershell
     - name: Install dependencies (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get -y install qemu-system
+      shell: bash
     - name: Install dependencies (Darwin)
       if: runner.os == 'macOS'
       run: |
         brew install qemu --force
+      shell: bash
     - name: Prepare command
       uses: DamianReeves/write-file-action@master
       with:
