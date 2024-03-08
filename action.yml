@@ -110,12 +110,12 @@ runs:
       id: restore-cache-image
       uses: actions/cache/restore@v4
       with:
-        path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow.7z
+        path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
         key: ${{ steps.read_manifest.outputs.tag_name }}
     - name: Fetch prebuilt NixOS image
       if: steps.restore-cache-image.outputs.cache-hit != 'true'
       run: |
-        sudo aria2c --dir="$NIXOS_RUN_TMPDIR" https://github.com/physics-enthusiast/nixos-image/releases/download/${{ steps.read_manifest.outputs.tag_name }}/nixos-qcow.7z
+        sudo aria2c --dir="$NIXOS_RUN_TMPDIR" https://github.com/physics-enthusiast/nixos-image/releases/download/${{ steps.read_manifest.outputs.tag_name }}/nixos-qcow-nocloud.7z
       shell: wsl-bash {0}
       env:
         WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
@@ -124,12 +124,12 @@ runs:
       uses: actions/cache/save@v4
       if: steps.restore-cache-image.outputs.cache-hit != 'true'
       with:
-        path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow.7z
+        path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
         key: ${{ steps.read_manifest.outputs.tag_name }}
     - name: Extract image
       run: |
         mkdir "$NIXOS_RUN_TMPDIR/extraction"
-        7z e "$NIXOS_RUN_TMPDIR/nixos-qcow.7z" -o"$NIXOS_RUN_TMPDIR/extraction"
+        7z e "$NIXOS_RUN_TMPDIR/nixos-qcow-nocloud.7z" -o"$NIXOS_RUN_TMPDIR/extraction"
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_TMPDIR/nixos.qcow2"
