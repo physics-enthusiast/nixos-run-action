@@ -4,7 +4,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: physics-enthusiast/nixos-run-action@main
+      - uses: physics-enthusiast/nixos-run-action@${{ github.action_ref }}
         with:
           cmd: |
             uname
