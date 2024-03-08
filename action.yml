@@ -102,16 +102,18 @@ runs:
         write-mode: overwrite
     - name: Fetch prebuilt NixOS image manifest
       id: read_manifest
-      uses: cityoflosangeles/fetch-latest-github-release@v2.0.3
+      uses: cardinalby/git-get-release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
       with:
-        github_token: ${{ github.token }}
-        repo_path: "physics-enthusiast/nixos-image"
+        repo: "physics-enthusiast/nixos-image"
+        latest: 1
     - name: Restore cache
       id: restore-cache-image
       uses: actions/cache/restore@v4
       with:
         path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
-        key: ${{ steps.read_manifest.outputs.tag_name }}
+        key: ${{ steps.read_manifest.outputs.published_at }}
     - name: Fetch prebuilt NixOS image
       if: steps.restore-cache-image.outputs.cache-hit != 'true'
       run: |
@@ -125,7 +127,7 @@ runs:
       if: steps.restore-cache-image.outputs.cache-hit != 'true'
       with:
         path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
-        key: ${{ steps.read_manifest.outputs.tag_name }}
+        key: ${{ steps.read_manifest.outputs.published_at }}
     - name: Extract image
       run: |
         mkdir "$NIXOS_RUN_TMPDIR/extraction"
