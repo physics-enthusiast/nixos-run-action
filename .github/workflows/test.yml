@@ -2,7 +2,18 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+          - name: Darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }} 
+    name: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./
