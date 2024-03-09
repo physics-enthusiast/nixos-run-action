@@ -135,6 +135,7 @@ runs:
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_TMPDIR/nixos.qcow2"
+        qemu-img resize "$NIXOS_RUN_TMPDIR/nixos.qcow2" 10G
       shell: wsl-bash {0}
       env:
         WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
@@ -193,6 +194,7 @@ runs:
                         await asyncio.sleep(1)
                 return res
             await run_force("systemctl is-system-running --wait", print_error=True)
+            await run("sudo lsblk", print_output=True, print_error=True)
             await run(f'''mkdir -p "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True)
             await run(f'''mount -t 9p -o trans=virtio,version=9p2000.L mnt "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True)
             await run("mkdir -p /tmp/cmd", print_error=True)
