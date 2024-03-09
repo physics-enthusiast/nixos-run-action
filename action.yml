@@ -135,6 +135,7 @@ runs:
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_TMPDIR/nixos.qcow2"
+        qemu-img resize "$NIXOS_RUN_TMPDIR/nixos.qcow2" 10G
       shell: wsl-bash {0}
       env:
         WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
