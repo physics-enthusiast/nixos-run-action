@@ -19,5 +19,6 @@ jobs:
       - uses: ./
         with:
           cmd: |
-            uname
+            sudo lsblk
+          filesize: 20G
           debug: true
