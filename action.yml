@@ -150,6 +150,7 @@ runs:
         import socket
         import base64
         from qemu.qmp import QMPClient
+        sys.stdout.reconfigure(encoding='utf-8')
         class CommandError(Exception):
             "Nonzero exit of guest-exec command"
             pass
