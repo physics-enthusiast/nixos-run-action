@@ -4,6 +4,9 @@ inputs:
   cmd:
     description: 'Command to run'
     required: false
+  filesize:
+    description: 'Size of the image file'
+    required: false
   host-dir:
     description: 'Directory to mount into VM'
     required: false
@@ -135,7 +138,7 @@ runs:
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_TMPDIR/nixos.qcow2"
-        qemu-img resize "$NIXOS_RUN_TMPDIR/nixos.qcow2" 10G
+        qemu-img resize "$NIXOS_RUN_TMPDIR/nixos.qcow2" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
       shell: wsl-bash {0}
       env:
         WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
@@ -147,6 +150,7 @@ runs:
         import socket
         import base64
         from qemu.qmp import QMPClient
+        sys.stdout.reconfigure(encoding='utf-8')
         class CommandError(Exception):
             "Nonzero exit of guest-exec command"
             pass
