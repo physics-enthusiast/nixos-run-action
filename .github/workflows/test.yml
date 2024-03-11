@@ -21,4 +21,5 @@ jobs:
           cmd: |
             sudo lsblk
           filesize: 20G
+          memory: 6G
           debug: true
