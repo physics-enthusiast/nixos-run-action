@@ -242,5 +242,5 @@ runs:
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
             await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'sleep 1 && shutdown now']})
             await proc.wait()
-        asyncio.run(main())
+        asyncio.run(main(), debug=True)
       shell: python
