@@ -20,6 +20,7 @@ jobs:
         id: test1
         with:
           cmd: |
+            systemd-analyze blame
             sudo lsblk
             sleep 5
             grep MemTotal /proc/meminfo
@@ -40,5 +41,5 @@ jobs:
         id: test3
         with:
           cmd: |
-            echo "second test"
+            echo "third test"
           image-path: ${{ steps.test2.outputs.image-path }}
