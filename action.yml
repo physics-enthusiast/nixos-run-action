@@ -145,7 +145,7 @@ runs:
         sudo aria2c --dir="$NIXOS_RUN_TMPDIR" https://github.com/physics-enthusiast/nixos-image/releases/download/${{ steps.read_manifest.outputs.tag_name }}/nixos-qcow-nocloud.7z
       shell: wsl-bash {0}
       env:
-        WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
+        WSLENV: NIXOS_RUN_TMPDIR/p
     - name: Save cache
       id: save-cache-image
       uses: actions/cache/save@v4
@@ -161,12 +161,15 @@ runs:
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
+      shell: wsl-bash {0}
+      env:
+        WSLENV: NIXOS_RUN_TMPDIR/p:NIXOS_RUN_IMGPATH/p
     - name: Resize image
       run: |
         qemu-img resize "$NIXOS_RUN_IMGPATH" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
       shell: wsl-bash {0}
       env:
-        WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p:NIXOS_RUN_IMGPATH/p
+        WSLENV: NIXOS_RUN_IMGPATH/p
     - name: Start VM
       run: |
         import os
