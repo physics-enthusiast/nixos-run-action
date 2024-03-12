@@ -78,16 +78,16 @@ runs:
       if: runner.os == 'Linux'
       run: |
         cd "$NIXOS_RUN_TMPDIR"
-        mkdir bash-redirect
-        ln -s $(which bash) bash-redirect/wsl-bash
+        mkdir -p bash-redirect
+        ln -sf $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
       shell: bash
     - name: Prepare common shell (Darwin)
       if: runner.os == 'macOS'
       run: |
         cd "$NIXOS_RUN_TMPDIR"
-        mkdir bash-redirect
-        ln -s $(which bash) bash-redirect/wsl-bash
+        mkdir -p bash-redirect
+        ln -sf $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
       shell: bash
     - name: Install dependencies (Windows)
@@ -156,7 +156,7 @@ runs:
     - name: Extract image
       if: steps.get_paths.outputs.image-path-exists != 'True'
       run: |
-        mkdir "$NIXOS_RUN_TMPDIR/extraction"
+        mkdir -p "$NIXOS_RUN_TMPDIR/extraction"
         7z e "$NIXOS_RUN_TMPDIR/nixos-qcow-nocloud.7z" -o"$NIXOS_RUN_TMPDIR/extraction"
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
