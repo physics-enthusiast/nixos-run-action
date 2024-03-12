@@ -36,7 +36,7 @@ jobs:
             echo "second test"
           host-cmd: |
             df -h
-          image-path: ${{ github.workspace }}/nixos.qcow2
+          image-path: /mnt/nixos.qcow2
       - uses: ./
         id: test3
         with:
