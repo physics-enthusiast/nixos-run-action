@@ -244,7 +244,7 @@ runs:
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
             #For a cleaner shutdown without QMP disconnection errors
             await run("rm -f /tmp/cmd/shutdown", print_error=True)
-            await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
+            await qmp.execute('guest-exec',{'path':'bash','arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
             await qmp.disconnect()
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/shutdown''', 'a'):  # Create file if does not exist
                pass
