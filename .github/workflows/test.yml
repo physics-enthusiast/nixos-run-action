@@ -35,7 +35,7 @@ jobs:
         with:
           cmd: |
             echo "Second test"
-          image-path: /mnt/nixos.qcow2
+          image-path: ${{ matrix.name == 'Linux' && '/mnt/nixos.qcow2' || format('{0}/nixos.qcow2', github.workspace) }} 
       - uses: ./
         id: test3
         with:
