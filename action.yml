@@ -240,10 +240,7 @@ runs:
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
-            try:
-                await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'shutdown now']})
-            except EOFError:
-                pass
+            await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'sleep 1 && shutdown now']})
             await proc.wait()
         asyncio.run(main())
       shell: python
