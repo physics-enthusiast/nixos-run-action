@@ -248,5 +248,5 @@ runs:
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/shutdown''', 'a'):  # Create file if does not exist
                pass
             await proc.wait()
-        asyncio.run(main(), debug=True)
+        asyncio.run(main())
       shell: python
