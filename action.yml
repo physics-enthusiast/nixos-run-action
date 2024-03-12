@@ -161,6 +161,9 @@ runs:
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
+    - name: Resize image
+      if: steps.get_paths.outputs.image-path-exists != 'True'
+      run: |
         qemu-img resize "$NIXOS_RUN_IMGPATH" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
       shell: wsl-bash {0}
       env:
@@ -192,7 +195,7 @@ runs:
                     await asyncio.sleep(1) 
             await qmp.connect(qga_sock)
             res = await qmp.execute('guest-ping')
-            async def run(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
+            async def run(cmd, print_output=False, print_error=False, sleep_interval=1):
                 pid = await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', '{}'.format(cmd)],'capture-output':'separated'})
                 res = await qmp.execute('guest-exec-status',pid)
                 while not res['exited']:
@@ -205,7 +208,6 @@ runs:
                             print(output)
                     else:
                         output = None
-                    await asyncio.sleep(final_pause)
                     return output
                 else:
                     if 'err-data' in res:
@@ -214,15 +216,14 @@ runs:
                             print(output)
                     else:
                         output = None
-                    await asyncio.sleep(final_pause)
                     if not output and print_error:
                         raise CommandError("Command failed without error message") 
                     else:
                         raise CommandError("Command failed")
-            async def run_force(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
+            async def run_force(cmd, print_output=False, print_error=False, sleep_interval=1):
                 while True:
                     try:
-                        res = await run(cmd, print_output=print_output, print_error=print_error, sleep_interval=sleep_interval, final_pause=final_pause)
+                        res = await run(cmd, print_output=print_output, print_error=print_error, sleep_interval=sleep_interval)
                         break
                     except:
                         await asyncio.sleep(1)
@@ -237,6 +238,7 @@ runs:
             log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
-            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, final_pause=5)
+            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
+            await run("shutdown now", print_error=True)
         asyncio.run(main())
       shell: python
