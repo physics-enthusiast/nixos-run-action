@@ -16,6 +16,9 @@ inputs:
   guest-dir:
     description: 'Path of mounted directory in VM'
     required: false
+  host-cmd:
+    description: 'Optional command to run on the host at the same time the guest is started'
+    required: false
   debug:
     description: 'Log the full OS boot sequence, for testing'
     required: false
@@ -100,7 +103,13 @@ runs:
       run: |
         brew install qemu --force
       shell: bash
-    - name: Prepare command
+    - name: Prepare host command
+      uses: DamianReeves/write-file-action@master
+      with:
+        path: ${{ env.NIXOS_RUN_CMDDIR }}/host_cmd.txt
+        contents: ${{ inputs.host-cmd }}
+        write-mode: overwrite
+    - name: Prepare guest command
       uses: DamianReeves/write-file-action@master
       with:
         path: ${{ env.NIXOS_RUN_CMDDIR }}/cmd.sh
@@ -215,6 +224,8 @@ runs:
             await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True)
             await run("touch /tmp/cmd/log.txt", print_error=True)
             log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
+            with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
+                coproc = await asyncio.create_subprocess_shell(f.read())
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, final_pause=5)
         asyncio.run(main())
       shell: python
