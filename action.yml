@@ -241,6 +241,7 @@ runs:
                 coproc = await asyncio.create_subprocess_shell(f.read())
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
             await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'sleep 1 && shutdown now']})
+            await qmp.disconnect()
             await proc.wait()
         asyncio.run(main(), debug=True)
       shell: python
