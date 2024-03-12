@@ -233,7 +233,7 @@ runs:
                     except:
                         await asyncio.sleep(1)
                 return res
-            bash_path = r"${{ inputs.bash_path }}" or r"/run/current-system/sw/bin/bash"
+            bash_path = r"${{ inputs.bash-path }}" or r"/run/current-system/sw/bin/bash"
             await run_force("systemctl is-system-running --wait", print_error=True, bash_path=bash_path)
             await run(f'''mkdir -p "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True, bash_path=bash_path)
             await run(f'''mount -t 9p -o trans=virtio,version=9p2000.L mnt "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True, bash_path=bash_path)
