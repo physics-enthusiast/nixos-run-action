@@ -28,7 +28,7 @@ jobs:
           filesize: 20G
           memory: 6G
           host-cmd: |
-            wsl-bash -c "df -h"
+            ${{ matrix.name == 'Windows' && 'fsutil fsinfo drives' || 'df -h' }}
           debug: true
       - uses: ./
         id: test2
