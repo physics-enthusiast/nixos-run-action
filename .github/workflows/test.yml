@@ -20,6 +20,7 @@ jobs:
         with:
           cmd: |
             sudo lsblk
+            sleep 5
             grep MemTotal /proc/meminfo
           filesize: 20G
           memory: 6G
