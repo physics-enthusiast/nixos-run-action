@@ -162,7 +162,6 @@ runs:
         files=( $pattern )
         mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
     - name: Resize image
-      if: steps.get_paths.outputs.image-path-exists != 'True'
       run: |
         qemu-img resize "$NIXOS_RUN_IMGPATH" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
       shell: wsl-bash {0}
