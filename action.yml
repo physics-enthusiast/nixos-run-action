@@ -172,30 +172,37 @@ runs:
                     await asyncio.sleep(1) 
             await qmp.connect(qga_sock)
             res = await qmp.execute('guest-ping')
-            async def run(cmd, print_output=False, print_error=False):
+            async def run(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
                 pid = await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', '{}'.format(cmd)],'capture-output':'separated'})
                 res = await qmp.execute('guest-exec-status',pid)
                 while not res['exited']:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(sleep_interval)
                     res = await qmp.execute('guest-exec-status',pid)
                 if res['exitcode'] == 0:
                     if 'out-data' in res:
                         output = base64.b64decode(res['out-data']).decode('utf-8')
                         if print_output:
                             print(output)
-                        return output
+                    else:
+                        output = None
+                    await asyncio.sleep(final_pause)
+                    return output
                 else:
                     if 'err-data' in res:
                         output = base64.b64decode(res['err-data']).decode('utf-8')
                         if print_error:
                             print(output)
-                        raise CommandError(output)
                     else:
+                        output = None
+                    await asyncio.sleep(final_pause)
+                    if not output and print_error:
                         raise CommandError("Command failed without error message") 
-            async def run_force(cmd, print_output=False, print_error=False):
+                    else:
+                        raise CommandError("Command failed")
+            async def run_force(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
                 while True:
                     try:
-                        res = await run(cmd, print_output, print_error)
+                        res = await run(cmd, print_output=print_output, print_error=print_error, sleep_interval=sleep_interval, final_pause=final_pause)
                         break
                     except:
                         await asyncio.sleep(1)
@@ -206,6 +213,8 @@ runs:
             await run("mkdir -p /tmp/cmd", print_error=True)
             await run("mount -t 9p -o trans=virtio,version=9p2000.L cmd /tmp/cmd", print_error=True)
             await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True)
-            await run("/tmp/cmd/cmd.sh", print_output=True, print_error=True)
+            await run("touch /tmp/cmd/log.txt", print_error=True)
+            log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
+            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, final_pause=5)
         asyncio.run(main())
       shell: python
