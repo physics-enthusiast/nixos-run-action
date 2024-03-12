@@ -158,7 +158,8 @@ runs:
         7z e "$NIXOS_RUN_TMPDIR/nixos-qcow-nocloud.7z" -o"$NIXOS_RUN_TMPDIR/extraction"
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
-        mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
+        sudo mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
+        sudo chmod 777 "$NIXOS_RUN_IMGPATH"
       shell: wsl-bash {0}
       env:
         WSLENV: NIXOS_RUN_TMPDIR/p:NIXOS_RUN_IMGPATH/p
