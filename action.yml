@@ -4,7 +4,6 @@ inputs:
   cmd:
     description: 'Command to run'
     required: false
-    default: ''
   filesize:
     description: 'Size of the image file'
     required: false
@@ -23,7 +22,6 @@ inputs:
   host-cmd:
     description: 'Optional command to run on the host at the same time the guest is started'
     required: false
-    default: ''
   debug:
     description: 'Log the full OS boot sequence, for testing'
     required: false
@@ -115,13 +113,13 @@ runs:
       uses: DamianReeves/write-file-action@master
       with:
         path: ${{ env.NIXOS_RUN_CMDDIR }}/host_cmd.txt
-        contents: ${{ inputs.host-cmd }}
+        contents: ${{ ( inputs.host-cmd != '' && inputs.host-cmd ) || ':' }}
         write-mode: overwrite
     - name: Prepare guest command
       uses: DamianReeves/write-file-action@master
       with:
         path: ${{ env.NIXOS_RUN_CMDDIR }}/cmd.sh
-        contents: ${{ inputs.cmd }}
+        contents: ${{ ( inputs.cmd != '' && inputs.cmd ) || ':' }}
         write-mode: overwrite
     - name: Fetch prebuilt NixOS image manifest
       id: read_manifest
