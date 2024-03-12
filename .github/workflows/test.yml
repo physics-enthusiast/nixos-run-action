@@ -42,4 +42,5 @@ jobs:
         with:
           cmd: |
             echo "third test"
+          filesize: 30G
           image-path: ${{ steps.test2.outputs.image-path }}
