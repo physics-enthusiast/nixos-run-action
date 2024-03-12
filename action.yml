@@ -234,6 +234,7 @@ runs:
             await run("mkdir -p /tmp/cmd", print_error=True)
             await run("mount -t 9p -o trans=virtio,version=9p2000.L cmd /tmp/cmd", print_error=True)
             await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True)
+            await run("rm -f /tmp/cmd/log.txt", print_error=True)
             await run("touch /tmp/cmd/log.txt", print_error=True)
             log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
