@@ -4,7 +4,6 @@ inputs:
   cmd:
     description: 'Command to run'
     required: false
-    default: ''
   filesize:
     description: 'Size of the image file'
     required: false
@@ -17,10 +16,15 @@ inputs:
   guest-dir:
     description: 'Path of mounted directory in VM'
     required: false
+  image-path:
+    description: "Path of VM disk image file"
+    required: false
+  bash-path:
+    description: "Path to bash binary on guest"
+    required: false
   host-cmd:
     description: 'Optional command to run on the host at the same time the guest is started'
     required: false
-    default: ''
   debug:
     description: 'Log the full OS boot sequence, for testing'
     required: false
@@ -50,14 +54,17 @@ runs:
         relpath = r"${{ inputs.host-dir }}" or r"./"
         abspath = os.path.abspath(relpath)
         gstpath = r"${{ inputs.guest-dir }}" or r"/tmp/mnt"
-        imgpath = os.path.abspath(r"${{ runner.temp }}/nixos-run/nixos.qcow2")
+        imgpath = r"${{ inputs.image-path }}" or os.path.abspath(r"${{ runner.temp }}/nixos-run/nixos.qcow2")
+        imgpath_exists = os.path.isfile(imgpath)
         with open(os.environ['GITHUB_ENV'], 'a') as fh:
             print(f'NIXOS_RUN_TMPDIR={tmppath}', file=fh)
             print(f'NIXOS_RUN_CMDDIR={cmdpath}', file=fh)
             print(f'NIXOS_RUN_MNTDIR={abspath}', file=fh)
             print(f'NIXOS_RUN_GSTDIR={gstpath}', file=fh)
+            print(f'NIXOS_RUN_IMGPATH={imgpath}', file=fh)
         with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'image-path={imgpath}', file=fh)
+            print(f'image-path-exists={imgpath_exists}', file=fh)
       shell: python
     - name: Prepare common shell (Windows)
       if: runner.os == 'Windows'
@@ -72,16 +79,16 @@ runs:
       if: runner.os == 'Linux'
       run: |
         cd "$NIXOS_RUN_TMPDIR"
-        mkdir bash-redirect
-        ln -s $(which bash) bash-redirect/wsl-bash
+        mkdir -p bash-redirect
+        ln -sf $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
       shell: bash
     - name: Prepare common shell (Darwin)
       if: runner.os == 'macOS'
       run: |
         cd "$NIXOS_RUN_TMPDIR"
-        mkdir bash-redirect
-        ln -s $(which bash) bash-redirect/wsl-bash
+        mkdir -p bash-redirect
+        ln -sf $(which bash) bash-redirect/wsl-bash
         echo "$PWD/bash-redirect" >> "$GITHUB_PATH"
       shell: bash
     - name: Install dependencies (Windows)
@@ -109,16 +116,17 @@ runs:
       uses: DamianReeves/write-file-action@master
       with:
         path: ${{ env.NIXOS_RUN_CMDDIR }}/host_cmd.txt
-        contents: ${{ inputs.host-cmd }}
+        contents: ${{ ( inputs.host-cmd != '' && inputs.host-cmd ) || ':' }}
         write-mode: overwrite
     - name: Prepare guest command
       uses: DamianReeves/write-file-action@master
       with:
         path: ${{ env.NIXOS_RUN_CMDDIR }}/cmd.sh
-        contents: ${{ inputs.cmd }}
+        contents: ${{ ( inputs.cmd != '' && inputs.cmd ) || ':' }}
         write-mode: overwrite
     - name: Fetch prebuilt NixOS image manifest
       id: read_manifest
+      if: steps.get_paths.outputs.image-path-exists != 'True'
       uses: cardinalby/git-get-release-action@v1
       env:
         GITHUB_TOKEN: ${{ github.token }} 
@@ -127,35 +135,43 @@ runs:
         latest: 1
     - name: Restore cache
       id: restore-cache-image
+      if: steps.get_paths.outputs.image-path-exists != 'True'
       uses: actions/cache/restore@v4
       with:
         path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
         key: ${{ steps.read_manifest.outputs.published_at }}
     - name: Fetch prebuilt NixOS image
-      if: steps.restore-cache-image.outputs.cache-hit != 'true'
+      if: steps.restore-cache-image.outputs.cache-hit != 'true' && steps.get_paths.outputs.image-path-exists != 'True'
       run: |
         sudo aria2c --dir="$NIXOS_RUN_TMPDIR" https://github.com/physics-enthusiast/nixos-image/releases/download/${{ steps.read_manifest.outputs.tag_name }}/nixos-qcow-nocloud.7z
       shell: wsl-bash {0}
       env:
-        WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
+        WSLENV: NIXOS_RUN_TMPDIR/p
     - name: Save cache
       id: save-cache-image
       uses: actions/cache/save@v4
-      if: steps.restore-cache-image.outputs.cache-hit != 'true'
+      if: steps.restore-cache-image.outputs.cache-hit != 'true' && steps.get_paths.outputs.image-path-exists != 'True'
       with:
         path: ${{ env.NIXOS_RUN_TMPDIR }}/nixos-qcow-nocloud.7z
         key: ${{ steps.read_manifest.outputs.published_at }}
     - name: Extract image
+      if: steps.get_paths.outputs.image-path-exists != 'True'
       run: |
-        mkdir "$NIXOS_RUN_TMPDIR/extraction"
+        mkdir -p "$NIXOS_RUN_TMPDIR/extraction"
         7z e "$NIXOS_RUN_TMPDIR/nixos-qcow-nocloud.7z" -o"$NIXOS_RUN_TMPDIR/extraction"
         pattern="$NIXOS_RUN_TMPDIR/extraction/*"
         files=( $pattern )
-        mv "${files[0]}" "$NIXOS_RUN_TMPDIR/nixos.qcow2"
-        qemu-img resize "$NIXOS_RUN_TMPDIR/nixos.qcow2" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
+        sudo mv "${files[0]}" "$NIXOS_RUN_IMGPATH"
+        sudo chmod 777 "$NIXOS_RUN_IMGPATH"
       shell: wsl-bash {0}
       env:
-        WSLENV: GITHUB_OUTPUT/p:NIXOS_RUN_TMPDIR/p
+        WSLENV: NIXOS_RUN_TMPDIR/p:NIXOS_RUN_IMGPATH/p
+    - name: Resize image
+      run: |
+        qemu-img resize "$NIXOS_RUN_IMGPATH" ${{ ( inputs.filesize != '' && inputs.filesize ) || '10G' }}
+      shell: wsl-bash {0}
+      env:
+        WSLENV: NIXOS_RUN_IMGPATH/p
     - name: Start VM
       run: |
         import os
@@ -168,7 +184,7 @@ runs:
         class CommandError(Exception):
             "Nonzero exit of guest-exec command"
             pass
-        cmd = f'''qemu-system-x86_64 -nographic -m ${{ ( inputs.memory != '' && inputs.memory ) || '4G' }} -chardev socket,id=qga0,host=localhost,port=9876,server=on -device virtio-serial -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 -fsdev local,security_model=mapped,id=fsdev0,path="{os.environ['NIXOS_RUN_CMDDIR']}" -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=cmd -fsdev local,security_model=mapped,id=fsdev1,path="{os.environ['NIXOS_RUN_MNTDIR']}" -device virtio-9p-pci,id=fs1,fsdev=fsdev1,mount_tag=mnt -smp {os.cpu_count()} -nic user -hda "{os.environ['NIXOS_RUN_TMPDIR']}/nixos.qcow2" -accel "whpx" -accel "kvm" -accel "hvf" -accel "tcg"'''
+        cmd = f'''qemu-system-x86_64 -nographic -m ${{ ( inputs.memory != '' && inputs.memory ) || '4G' }} -chardev socket,id=qga0,host=localhost,port=9876,server=on -device virtio-serial -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 -fsdev local,security_model=mapped,id=fsdev0,path="{os.environ['NIXOS_RUN_CMDDIR']}" -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=cmd -fsdev local,security_model=mapped,id=fsdev1,path="{os.environ['NIXOS_RUN_MNTDIR']}" -device virtio-9p-pci,id=fs1,fsdev=fsdev1,mount_tag=mnt -smp {os.cpu_count()} -nic user -hda "{os.environ['NIXOS_RUN_IMGPATH']}" -accel "whpx" -accel "kvm" -accel "hvf" -accel "tcg"'''
         async def main():
             proc = await asyncio.create_subprocess_shell(cmd${{ ( inputs.debug != 'true' && ', stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL' ) || '' }})
             qmp = QMPClient()
@@ -183,8 +199,8 @@ runs:
                     await asyncio.sleep(1) 
             await qmp.connect(qga_sock)
             res = await qmp.execute('guest-ping')
-            async def run(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
-                pid = await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', '{}'.format(cmd)],'capture-output':'separated'})
+            async def run(cmd, print_output=False, print_error=False, sleep_interval=1, bash_path='/run/current-system/sw/bin/bash'):
+                pid = await qmp.execute('guest-exec',{'path':bash_path,'arg':['-lc', '{}'.format(cmd)],'capture-output':'separated'})
                 res = await qmp.execute('guest-exec-status',pid)
                 while not res['exited']:
                     await asyncio.sleep(sleep_interval)
@@ -196,7 +212,6 @@ runs:
                             print(output)
                     else:
                         output = None
-                    await asyncio.sleep(final_pause)
                     return output
                 else:
                     if 'err-data' in res:
@@ -205,29 +220,38 @@ runs:
                             print(output)
                     else:
                         output = None
-                    await asyncio.sleep(final_pause)
+                    await asyncio.sleep(5) #Give error time to print
                     if not output and print_error:
                         raise CommandError("Command failed without error message") 
                     else:
                         raise CommandError("Command failed")
-            async def run_force(cmd, print_output=False, print_error=False, sleep_interval=1, final_pause=5):
+            async def run_force(cmd, print_output=False, print_error=False, sleep_interval=1, bash_path='/run/current-system/sw/bin/bash'):
                 while True:
                     try:
-                        res = await run(cmd, print_output=print_output, print_error=print_error, sleep_interval=sleep_interval, final_pause=final_pause)
+                        res = await run(cmd, print_output=print_output, print_error=print_error, sleep_interval=sleep_interval, bash_path=bash_path)
                         break
                     except:
                         await asyncio.sleep(1)
                 return res
-            await run_force("systemctl is-system-running --wait", print_error=True)
-            await run(f'''mkdir -p "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True)
-            await run(f'''mount -t 9p -o trans=virtio,version=9p2000.L mnt "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True)
-            await run("mkdir -p /tmp/cmd", print_error=True)
-            await run("mount -t 9p -o trans=virtio,version=9p2000.L cmd /tmp/cmd", print_error=True)
-            await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True)
-            await run("touch /tmp/cmd/log.txt", print_error=True)
+            bash_path = r"${{ inputs.bash-path }}" or r"/run/current-system/sw/bin/bash"
+            await run_force("systemctl is-system-running --wait", print_error=True, bash_path=bash_path)
+            await run(f'''mkdir -p "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True, bash_path=bash_path)
+            await run(f'''mount -t 9p -o trans=virtio,version=9p2000.L mnt "{os.environ['NIXOS_RUN_GSTDIR']}"''', print_error=True, bash_path=bash_path)
+            await run("mkdir -p /tmp/cmd", print_error=True, bash_path=bash_path)
+            await run("mount -t 9p -o trans=virtio,version=9p2000.L cmd /tmp/cmd", print_error=True, bash_path=bash_path)
+            await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True, bash_path=bash_path)
+            await run("rm -f /tmp/cmd/log.txt", print_error=True, bash_path=bash_path)
+            await run("touch /tmp/cmd/log.txt", print_error=True, bash_path=bash_path)
             log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
-            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, final_pause=5)
+            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, bash_path=bash_path)
+            #For a cleaner shutdown without QMP disconnection errors
+            await run("rm -f /tmp/cmd/shutdown", print_error=True, bash_path=bash_path)
+            await qmp.execute('guest-exec',{'path':bash_path,'arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
+            await qmp.disconnect()
+            with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/shutdown''', 'a'):  # Create file if does not exist
+               pass
+            await proc.wait()
         asyncio.run(main())
       shell: python

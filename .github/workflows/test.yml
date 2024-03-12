@@ -17,13 +17,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
+        id: test1
         with:
           cmd: |
+            systemd-analyze blame
             sudo lsblk
             sleep 5
             grep MemTotal /proc/meminfo
+            echo "First test"
           filesize: 20G
           memory: 6G
           host-cmd: |
             df -h
           debug: true
+      - uses: ./
+        id: test2
+        with:
+          cmd: |
+            echo "Second test"
+          image-path: ${{ matrix.name == 'Linux' && '/mnt/nixos.qcow2' || format('{0}/nixos.qcow2', github.workspace) }} 
+      - uses: ./
+        id: test3
+        with:
+          cmd: |
+            echo "Third test"
+          filesize: 30G
+          image-path: ${{ steps.test2.outputs.image-path }}
