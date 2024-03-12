@@ -28,22 +28,18 @@ jobs:
           filesize: 20G
           memory: 6G
           host-cmd: |
-            df -h
+            wsl-bash -c "df -h"
           debug: true
       - uses: ./
         id: test2
         with:
           cmd: |
             echo "Second test"
-          host-cmd: |
-            df -h
           image-path: /mnt/nixos.qcow2
       - uses: ./
         id: test3
         with:
           cmd: |
             echo "Third test"
-          host-cmd: |
-            df -h
           filesize: 30G
           image-path: ${{ steps.test2.outputs.image-path }}
