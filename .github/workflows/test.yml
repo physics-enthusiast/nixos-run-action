@@ -35,10 +35,10 @@ jobs:
             echo "second test"
           host-cmd: |
             df -h
-          img-path: ${{ github.workspace }}/nixos.qcow2
+          image-path: ${{ github.workspace }}/nixos.qcow2
       - uses: ./
         id: test3
         with:
           cmd: |
             echo "second test"
-          img-path: ${{ steps.test2.outputs.image-path }}
+          image-path: ${{ steps.test2.outputs.image-path }}
