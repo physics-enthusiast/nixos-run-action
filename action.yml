@@ -240,8 +240,12 @@ runs:
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
-            await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'sleep 1 && shutdown now']})
+            #For a cleaner shutdown without QMP disconnection errors
+            await run("rm -f /tmp/cmd/shutdown", print_error=True)
+            await qmp.execute('guest-exec',{'path':'/run/current-system/sw/bin/bash','arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
             await qmp.disconnect()
+            with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/shutdown''', 'a'):  # Create file if does not exist
+               pass
             await proc.wait()
         asyncio.run(main(), debug=True)
       shell: python
