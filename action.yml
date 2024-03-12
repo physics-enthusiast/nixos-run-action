@@ -244,6 +244,6 @@ runs:
             try:
                 await run("shutdown now", print_error=True)
             except ExecInterruptedError:
-                await qmp.disconnect()
+                pass
         asyncio.run(main())
       shell: python
