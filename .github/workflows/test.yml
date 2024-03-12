@@ -24,4 +24,6 @@ jobs:
             grep MemTotal /proc/meminfo
           filesize: 20G
           memory: 6G
+          host-cmd: |
+            df -h
           debug: true
