@@ -4,6 +4,7 @@ inputs:
   cmd:
     description: 'Command to run'
     required: false
+    default: ''
   filesize:
     description: 'Size of the image file'
     required: false
@@ -19,6 +20,7 @@ inputs:
   host-cmd:
     description: 'Optional command to run on the host at the same time the guest is started'
     required: false
+    default: ''
   debug:
     description: 'Log the full OS boot sequence, for testing'
     required: false
