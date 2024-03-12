@@ -177,7 +177,7 @@ runs:
         import asyncio
         import socket
         import base64
-        from qemu.qmp import QMPClient, ExecInterruptedError
+        from qemu.qmp import QMPClient
         sys.stdout.reconfigure(encoding='utf-8')
         class CommandError(Exception):
             "Nonzero exit of guest-exec command"
@@ -241,9 +241,7 @@ runs:
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
             await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1)
-            try:
-                await run("shutdown now", print_error=True)
-            except ExecInterruptedError:
-                pass
+            await qmp.execute('guest-shutdown',{'mode':'powerdown'})
+            await proc.wait()
         asyncio.run(main())
       shell: python
