@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
+        id: test1
         with:
           cmd: |
             sudo lsblk
@@ -27,3 +28,17 @@ jobs:
           host-cmd: |
             df -h
           debug: true
+      - uses: ./
+        id: test2
+        with:
+          cmd: |
+            echo "second test"
+          host-cmd: |
+            df -h
+          img-path: ${{ github.workspace }}/nixos.qcow2
+      - uses: ./
+        id: test3
+        with:
+          cmd: |
+            echo "second test"
+          img-path: ${{ steps.test2.outputs.image-path }}
