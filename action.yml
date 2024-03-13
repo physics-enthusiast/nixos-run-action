@@ -255,6 +255,8 @@ runs:
                 await run("echo -e '\n' >> /tmp/cmd/err.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
                 await asyncio.sleep(5)
                 raise e
+            await run("echo -e '\n' >> /tmp/cmd/out.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
+            await run("echo -e '\n' >> /tmp/cmd/err.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
             #For a cleaner shutdown without QMP disconnection errors
             await run("rm -f /tmp/cmd/shutdown", print_error=True, bash_path=bash_path)
             await qmp.execute('guest-exec',{'path':bash_path,'arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
