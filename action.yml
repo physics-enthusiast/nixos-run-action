@@ -240,12 +240,23 @@ runs:
             await run("mkdir -p /tmp/cmd", print_error=True, bash_path=bash_path)
             await run("mount -t 9p -o trans=virtio,version=9p2000.L cmd /tmp/cmd", print_error=True, bash_path=bash_path)
             await run("chmod 755 /tmp/cmd/cmd.sh", print_error=True, bash_path=bash_path)
-            await run("rm -f /tmp/cmd/log.txt", print_error=True, bash_path=bash_path)
-            await run("touch /tmp/cmd/log.txt", print_error=True, bash_path=bash_path)
-            log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/log.txt''')
+            await run("rm -f /tmp/cmd/out.txt", print_error=True, bash_path=bash_path)
+            await run("rm -f /tmp/cmd/err.txt", print_error=True, bash_path=bash_path)
+            await run("touch /tmp/cmd/out.txt", print_error=True, bash_path=bash_path)
+            await run("touch /tmp/cmd/err.txt", print_error=True, bash_path=bash_path)
+            out_log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/out.txt''')
+            err_log = await asyncio.create_subprocess_shell(f'''tail -f {os.environ['NIXOS_RUN_CMDDIR']}/err.txt''')
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
-            await run("stdbuf -oL -eL /tmp/cmd/cmd.sh &> /tmp/cmd/log.txt", print_output=False, print_error=False, sleep_interval=1, bash_path=bash_path)
+            try:
+                await run("stdbuf -oL -eL /tmp/cmd/cmd.sh 1>> /tmp/cmd/out.txt 2>> /tmp/cmd/err.txt", print_output=False, print_error=False, sleep_interval=1, bash_path=bash_path)
+            except CommandError as e:
+                await run("echo -e '\n' >> /tmp/cmd/out.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
+                await run("echo -e '\n' >> /tmp/cmd/err.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
+                await asyncio.sleep(5)
+                raise e
+            await run("echo -e '\n' >> /tmp/cmd/out.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
+            await run("echo -e '\n' >> /tmp/cmd/err.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
             #For a cleaner shutdown without QMP disconnection errors
             await run("rm -f /tmp/cmd/shutdown", print_error=True, bash_path=bash_path)
             await qmp.execute('guest-exec',{'path':bash_path,'arg':['-lc', 'while [ ! -f /tmp/cmd/shutdown ]; do sleep 1; done && shutdown now']})
