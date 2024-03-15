@@ -249,7 +249,7 @@ runs:
             with open(f'''{os.environ['NIXOS_RUN_CMDDIR']}/host_cmd.txt''') as f:
                 coproc = await asyncio.create_subprocess_shell(f.read())
             try:
-                await run("stdbuf -oL -eL /tmp/cmd/cmd.sh 1>> /tmp/cmd/out.txt 2>> /tmp/cmd/err.txt", print_output=False, print_error=False, sleep_interval=1, bash_path=bash_path)
+                await run("/tmp/cmd/cmd.sh 1>> /tmp/cmd/out.txt 2>> /tmp/cmd/err.txt", print_output=False, print_error=False, sleep_interval=1, bash_path=bash_path)
             except CommandError as e:
                 await run("echo -e '\n' >> /tmp/cmd/out.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
                 await run("echo -e '\n' >> /tmp/cmd/err.txt", print_output=False, print_error=True, sleep_interval=1, bash_path=bash_path)
